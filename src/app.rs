@@ -15,17 +15,14 @@ use cosmic::{
     iced::{Length, Subscription},
     surface, theme,
     widget::{
-        self,
+        self, RcElementWrapper,
         about::About,
-        icon,
+        button, icon,
         menu::{self, ItemHeight, ItemWidth, key_bind::KeyBind},
     },
 };
 use i18n_embed::DesktopLanguageRequester;
-use std::{collections::HashMap, sync::LazyLock, time::Duration};
-
-static MENU_ID: LazyLock<cosmic::widget::Id> =
-    LazyLock::new(|| cosmic::widget::Id::new("responsive-menu"));
+use std::{collections::HashMap, time::Duration};
 
 const REPOSITORY_URL: &str = "https://github.com/cosmic-utils/cosmic-ext-compass";
 const SUPPORT_URL: &str = "https://github.com/cosmic-utils/cosmic-ext-compass/issues";
@@ -122,16 +119,6 @@ impl menu::action::MenuAction for MenuItemAction {
             Self::About => Message::ToggleAbout,
         }
     }
-}
-
-fn view_menu() -> (String, Vec<menu::Item<MenuItemAction, String>>) {
-    (
-        fl!("view"),
-        vec![
-            menu::Item::Button(fl!("menu-settings"), None, MenuItemAction::Settings),
-            menu::Item::Button(fl!("menu-about"), None, MenuItemAction::About),
-        ],
-    )
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -619,17 +606,25 @@ impl Application for CompassApp {
 
     fn header_start(&self) -> Vec<Element<'_, Message>> {
         vec![
-            widget::responsive_menu_bar()
-                .item_height(ItemHeight::Dynamic(40))
-                .item_width(ItemWidth::Uniform(320))
-                .spacing(4.0)
-                .into_element(
-                    &self.core,
+            menu::bar(vec![menu::Tree::with_children(
+                RcElementWrapper::new(Element::from(
+                    button::icon(icon::from_name("open-menu-symbolic"))
+                        .padding([4, 12])
+                        .class(theme::Button::MenuRoot),
+                )),
+                menu::items(
                     &self.menu_key_binds,
-                    MENU_ID.clone(),
-                    Message::Surface,
-                    vec![view_menu()],
+                    vec![
+                        menu::Item::Button(fl!("menu-settings"), None, MenuItemAction::Settings),
+                        menu::Item::Divider,
+                        menu::Item::Button(fl!("menu-about"), None, MenuItemAction::About),
+                    ],
                 ),
+            )])
+            .item_height(ItemHeight::Dynamic(40))
+            .item_width(ItemWidth::Uniform(320))
+            .spacing(4.0)
+            .into(),
         ]
     }
 
